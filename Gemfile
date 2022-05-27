@@ -3,6 +3,8 @@ source 'https://rubygems.org'
 #   spec.add_runtime_dependency '<name>', [<version requirements>]
 gemspec name: 'metasploit-framework'
 
+gem 'metasploit-model', git: 'https://github.com/adfoster-r7/metasploit-model', branch: 'update-login-status-enum-to-support-incorrect-public-part'
+
 # separate from test as simplecov is not run on travis-ci
 group :coverage do
   # code coverage for tests

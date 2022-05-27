@@ -1,3 +1,13 @@
+GIT
+  remote: https://github.com/adfoster-r7/metasploit-model
+  revision: b128ddf188a9156d2b32171288b7159eeebc8695
+  branch: update-login-status-enum-to-support-incorrect-public-part
+  specs:
+    metasploit-model (4.0.2)
+      activemodel (~> 6.0)
+      activesupport (~> 6.0)
+      railties (~> 6.0)
+
 PATH
   remote: .
   specs:
@@ -241,10 +251,6 @@ GEM
       rex-socket
       rubyntlm
       rubyzip
-    metasploit-model (4.0.4)
-      activemodel (~> 6.0)
-      activesupport (~> 6.0)
-      railties (~> 6.0)
     metasploit-payloads (2.0.93)
     metasploit_data_models (5.0.5)
       activerecord (~> 6.0)
@@ -502,6 +508,7 @@ DEPENDENCIES
   fivemat
   memory_profiler
   metasploit-framework!
+  metasploit-model!
   octokit
   pry-byebug
   rake
@@ -515,4 +522,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.1.4
+   2.2.22
