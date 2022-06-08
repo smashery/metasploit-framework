@@ -44,7 +44,8 @@ module Rex
           def encrypt_rc4_hmac(data, key, msg_type)
             k1 = OpenSSL::HMAC.digest('MD5', key, [msg_type].pack('V'))
 
-            data_encrypt = Rex::Text::rand_text(8) + data
+            confounder = Rex::Text::rand_text(8) 
+            data_encrypt = confounder + data
 
             checksum = OpenSSL::HMAC.digest('MD5', k1, data_encrypt)
 
