@@ -5,6 +5,14 @@ module Rex
     module Kerberos
       module Crypto
         module Rc4Hmac
+
+          def get_key(password)
+            unicode_password = Rex::Text.to_unicode(password)
+            password_digest = OpenSSL::Digest.digest('MD4', unicode_password)
+
+            password_digest
+          end
+          
           # Decrypts the cipher using RC4-HMAC schema
           #
           # @param cipher [String] the data to decrypt
