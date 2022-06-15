@@ -83,7 +83,7 @@ module Rex
             cipher = OpenSSL::Cipher.new('des-cbc')
             cipher.decrypt
             cipher.key = key
-            decrypted = cipher.update(data) + cipher.final
+            decrypted = cipher.update(data)
 
             confounder = decrypted[0, BLOCK_LENGTH]
             checksum = decrypted[BLOCK_LENGTH, HASH_LENGTH]
@@ -118,7 +118,7 @@ module Rex
             cipher = OpenSSL::Cipher.new('des-cbc')
             cipher.encrypt
             cipher.key = key
-            encrypted = cipher.update(plaintext) + cipher.final
+            encrypted = cipher.update(plaintext)
 
             encrypted
           end
