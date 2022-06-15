@@ -4,9 +4,10 @@ module Rex
   module Proto
     module Kerberos
       module Crypto
-        module Rc4Hmac
+        class Rc4Hmac
 
-          def get_key(password)
+          def string_to_key(password, salt)
+            # Salt is unused in Rc4
             unicode_password = Rex::Text.to_unicode(password)
             password_digest = OpenSSL::Digest.digest('MD4', unicode_password)
 
@@ -20,7 +21,7 @@ module Rex
           # @param msg_type [Integer] the message type
           # @return [String] the decrypted cipher
           # @raise [Rex::Proto::Kerberos::Model::Error::KerberosError] if decryption doesn't succeed
-          def decrypt_rc4_hmac(cipher, key, msg_type)
+          def decrypt(cipher, key, msg_type)
             unless cipher && cipher.length > 16
               raise ::RuntimeError, 'RC4-HMAC decryption failed'
             end
@@ -40,7 +41,11 @@ module Rex
               raise ::Rex::Proto::Kerberos::Model::Error::KerberosError, 'RC4-HMAC decryption failed, incorrect checksum verification'
             end
 
-            decrypted
+            # Expect the first 8 bytes to be the confounder
+            raise ::Rex::Proto::Kerberos::Model::Error::KerberosDecodingError, 'EncryptedData failed to decrypt' if decrypted.length < 8
+
+            # Skip the confounder when returning
+            decrypted[8,decrypted.length]
           end
 
           # Encrypts the cipher using RC4-HMAC schema
@@ -49,7 +54,7 @@ module Rex
           # @param key [String] the key to encrypt
           # @param msg_type [Integer] the message type
           # @return [String] the encrypted data
-          def encrypt_rc4_hmac(data, key, msg_type)
+          def encrypt(data, key, msg_type)
             k1 = OpenSSL::HMAC.digest('MD5', key, [msg_type].pack('V'))
 
             confounder = Rex::Text::rand_text(8) 

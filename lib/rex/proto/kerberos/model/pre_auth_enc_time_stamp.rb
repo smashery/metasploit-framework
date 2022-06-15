@@ -55,18 +55,8 @@ module Rex
           # @raise [NotImplementedError] if encryption schema isn't supported
           def encrypt(etype, key)
             data = self.encode
-
-            res = ''
-            case etype
-            when RC4_HMAC
-              res = encrypt_rc4_hmac(data, key, CRYPTO_MSG_TYPE)
-            when DES_CBC_MD5
-              res = encrypt_des_cbc_md5(data, key)
-            else
-              raise ::NotImplementedError, 'EncryptedData schema is not supported'
-            end
-
-            res
+            encryptor = get_kerberos_encryptor(etype)
+            encryptor.encrypt(data, key, CRYPTO_MSG_TYPE)
           end
 
           private

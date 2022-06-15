@@ -4,12 +4,12 @@ module Rex
   module Proto
     module Kerberos
       module Crypto
-        module DesCbcMd5
+        class DesCbcMd5
           HASH_LENGTH = 16
           BLOCK_LENGTH = 8
 
 
-          def get_key_des_cbc_md5(string, salt)
+          def string_to_key(string, salt)
             reverse_this_block = false
             tempstring = [0,0,0,0,0,0,0,0]
 
@@ -72,9 +72,10 @@ module Rex
           #
           # @param cipher [String] the data to decrypt
           # @param key [String] the key to decrypt
+          # @param msg_type [Integer] ignored for this algorithm
           # @return [String] the decrypted cipher
           # @raise [RuntimeError] if decryption doesn't succeed
-          def decrypt_des_cbc_md5(cipher, key)
+          def decrypt(cipher, key, msg_type)
             unless cipher && cipher.length > BLOCK_LENGTH + HASH_LENGTH
               raise ::RuntimeError, 'DES-CBC decryption failed'
             end
@@ -98,20 +99,12 @@ module Rex
             decrypted
           end
 
-          # Pads the provided data to a multiple of block_length
-          # Zeroes are added at the end
-          def pad_with_zeroes(data, block_length)
-            pad_length = block_length - (data.length % block_length)
-            pad_length %= block_length # In case it's a perfect multiple, do no padding
-            return data + "\x00" * pad_length
-          end
-
           # Encrypts the cipher using DES-CBC-MD5 schema
           #
           # @param data [String] the data to encrypt
           # @param key [String] the key to encrypt
           # @return [String] the encrypted data
-          def encrypt_des_cbc_md5(data, key)
+          def encrypt(data, key)
             confounder = Rex::Text::rand_text(BLOCK_LENGTH)
             padded_data = pad_with_zeroes(data, BLOCK_LENGTH)
             hashed_data = confounder + "\x00" * HASH_LENGTH + padded_data
@@ -131,6 +124,14 @@ module Rex
           end
 
           private
+
+          # Pads the provided data to a multiple of block_length
+          # Zeroes are added at the end
+          def pad_with_zeroes(data, block_length)
+            pad_length = block_length - (data.length % block_length)
+            pad_length %= block_length # In case it's a perfect multiple, do no padding
+            return data + "\x00" * pad_length
+          end
 
           def fixparity(deskey)
             temp = []
