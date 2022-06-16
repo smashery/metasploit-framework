@@ -52,11 +52,12 @@ module Rex
           #
           # @param data [String] the data to encrypt
           # @param key [String] the key to encrypt
+          # @param confounder [String] Optionally force the confounder to a specific value
           # @return [String] the encrypted data
-          def encrypt(plaintext, key, msg_type)
+          def encrypt(plaintext, key, msg_type, confounder=nil)
             ki = derive(key, [msg_type, 0x55].pack('NC'))
             ke = derive(key, [msg_type, 0xAA].pack('NC'))
-            confounder = Rex::Text::rand_text(self.class::BLOCK_SIZE)
+            confounder = Rex::Text::rand_text(self.class::BLOCK_SIZE) if confounder == nil
             plaintext = confounder + pad_with_zeroes(plaintext, self.class::PADDING_SIZE)
             hmac = OpenSSL::HMAC.digest(self.class::HASH_FUNCTION, ki, plaintext)
 

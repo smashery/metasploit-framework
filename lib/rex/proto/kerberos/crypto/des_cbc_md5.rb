@@ -11,13 +11,14 @@ module Rex
           BLOCK_SIZE = 8
           PADDING_SIZE = 8
 
-          def string_to_key(string, salt)
+          def string_to_key(string, salt, iterations=nil)
+            raise ::RuntimeError, 'Iterations not supported for DES' unless iterations == nil
             reverse_this_block = false
             tempstring = [0,0,0,0,0,0,0,0]
 
             utf8_encoded = (string + salt).encode('UTF-8').bytes.pack('C*')
 
-            data = pad_with_zeroes(utf8_encoded)
+            data = pad_with_zeroes(utf8_encoded, PADDING_SIZE)
             data_as_blocks = data.unpack('C*')
 
             data_as_blocks.each_slice(BLOCK_SIZE) do |block|
@@ -108,10 +109,11 @@ module Rex
           # @param data [String] the data to encrypt
           # @param key [String] the key to encrypt
           # @param msg_type [Integer] ignored for this algorithm
+          # @param confounder [String] Optionally force the confounder to a specific value
           # @return [String] the encrypted data
-          def encrypt(plaintext, key, msg_type)
-            confounder = Rex::Text::rand_text(BLOCK_SIZE)
-            padded_data = pad_with_zeroes(plaintext)
+          def encrypt(plaintext, key, msg_type, confounder=nil)
+            confounder = Rex::Text::rand_text(BLOCK_SIZE) if confounder == nil
+            padded_data = pad_with_zeroes(plaintext, PADDING_SIZE)
             hashed_data = confounder + "\x00" * HASH_LENGTH + padded_data
             hash_fn = OpenSSL::Digest.new('MD5')
             checksum = hash_fn.digest(hashed_data)

@@ -15,7 +15,7 @@ module Rex
 
           # Subclasses must also define ENCRYPT_CIPHER_NAME and DECRYPT_CIPHER_NAME
       
-          def string_to_key(string, salt, iterations)
+          def string_to_key(string, salt, iterations = nil)
             iterations = 4096 if iterations == nil
             seed = OpenSSL::KDF.pbkdf2_hmac(string, salt: salt, iterations: iterations, length: self.class::SEED_SIZE, hash: HASH_FUNCTION)
             tkey = random_to_key(seed)

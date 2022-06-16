@@ -12,7 +12,8 @@ module Rex
           MAC_SIZE = 20
           HASH_FUNCTION = 'SHA1'
 
-          def string_to_key(string, salt)
+          def string_to_key(string, salt, iterations=nil)
+            raise ::RuntimeError, 'Iterations not supported for DES' unless iterations == nil
             utf8_encoded = (string + salt).encode('UTF-8').bytes
             k = random_to_key(nfold(utf8_encoded, 21))
             k = k.pack('C*')

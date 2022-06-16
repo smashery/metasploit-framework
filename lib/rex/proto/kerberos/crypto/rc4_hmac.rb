@@ -6,7 +6,9 @@ module Rex
       module Crypto
         class Rc4Hmac
 
-          def string_to_key(password, salt)
+          def string_to_key(password, salt, iterations)
+            raise ::RuntimeError, 'Iterations not supported for DES3' unless iterations == nil
+            raise ::RuntimeError, 'Salt not supported for DES3' unless iterations == nil
             # Salt is unused in Rc4
             unicode_password = Rex::Text.to_unicode(password)
             password_digest = OpenSSL::Digest.digest('MD4', unicode_password)
@@ -19,6 +21,7 @@ module Rex
           # @param cipher [String] the data to decrypt
           # @param key [String] the key to decrypt
           # @param msg_type [Integer] the message type
+          # @param confounder [String] Optionally force the confounder to a specific value
           # @return [String] the decrypted cipher
           # @raise [Rex::Proto::Kerberos::Model::Error::KerberosError] if decryption doesn't succeed
           def decrypt(cipher, key, msg_type)
@@ -54,10 +57,10 @@ module Rex
           # @param key [String] the key to encrypt
           # @param msg_type [Integer] the message type
           # @return [String] the encrypted data
-          def encrypt(data, key, msg_type)
+          def encrypt(data, key, msg_type, confounder=nil)
             k1 = OpenSSL::HMAC.digest('MD5', key, [msg_type].pack('V'))
 
-            confounder = Rex::Text::rand_text(8) 
+            confounder = Rex::Text::rand_text(8) if confounder == nil
             data_encrypt = confounder + data
 
             checksum = OpenSSL::HMAC.digest('MD5', k1, data_encrypt)
