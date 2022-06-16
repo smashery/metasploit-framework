@@ -9,6 +9,7 @@ module Rex
         class DesCbcMd5 < BlockCipherBase
           HASH_LENGTH = 16
           BLOCK_SIZE = 8
+          PADDING_SIZE = 8
 
           def string_to_key(string, salt)
             reverse_this_block = false
@@ -39,7 +40,7 @@ module Rex
 
               reverse_this_block = (not reverse_this_block)
 
-              tempstring = XOR(tempstring,result)
+              tempstring = xor_bytes(tempstring,result)
             end
 
             paritied = addparity(tempstring)
@@ -156,7 +157,7 @@ module Rex
             temp
           end
 
-          def XOR(l1,l2)
+          def xor_bytes(l1,l2)
             result = []
             l1.zip(l2).each do |b1,b2|
               if b1 != nil && b2 != nil

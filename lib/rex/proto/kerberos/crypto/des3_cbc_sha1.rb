@@ -8,6 +8,7 @@ module Rex
         class Des3CbcSha1 < BlockCipherBase
           SEED_SIZE = 21
           BLOCK_SIZE = 8
+          PADDING_SIZE = 8
           MAC_SIZE = 20
           HASH_FUNCTION = 'SHA1'
 
@@ -24,6 +25,7 @@ module Rex
 
           # Decrypts the cipher using DES3-CBC-SHA1 schema
           def decrypt_basic(ciphertext, key)
+            raise ::RuntimeError, 'Ciphertext is not a multiple of block length' unless ciphertext.length % BLOCK_SIZE == 0
             cipher = OpenSSL::Cipher.new('des-ede3-cbc')
             cipher.decrypt
             cipher.key = key

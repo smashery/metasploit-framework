@@ -9,6 +9,7 @@ module Rex
           # Subclasses must define:
           # BLOCK_SIZE
           # SEED_SIZE
+          # PADDING_SIZE
           # HASH_FUNCTION
           # MAC_SIZE
           # decrypt_basic
@@ -30,18 +31,13 @@ module Rex
             ki = derive(key, [msg_type, 0x55].pack('NC'))
             ke = derive(key, [msg_type, 0xAA].pack('NC'))
 
-            if ciphertext_and_mac.length < (self.class::BLOCK_SIZE + self.class::MAC_SIZE)
-                raise RuntimeError, 'Ciphertext too short'
-            end
+            raise RuntimeError, 'Ciphertext too short' if ciphertext_and_mac.length < (self.class::BLOCK_SIZE + self.class::MAC_SIZE)
 
             ciphertext = ciphertext_and_mac.slice(0..-(self.class::MAC_SIZE+1))
             mac = ciphertext_and_mac[-self.class::MAC_SIZE, self.class::MAC_SIZE]
-            if ciphertext.length % self.class::BLOCK_SIZE != 0
-                raise RuntimeError, 'Ciphertext is not a multiple of block length'
-            end
+
 
             plaintext = decrypt_basic(ciphertext, ke)
-            print("Decrypted: #{plaintext}\n")
             hmac = OpenSSL::HMAC.digest(self.class::HASH_FUNCTION, ki, plaintext)
             hmac_subset = hmac[0, self.class::MAC_SIZE]
             if mac != hmac_subset
@@ -61,7 +57,7 @@ module Rex
             ki = derive(key, [msg_type, 0x55].pack('NC'))
             ke = derive(key, [msg_type, 0xAA].pack('NC'))
             confounder = Rex::Text::rand_text(self.class::BLOCK_SIZE)
-            plaintext = confounder + pad_with_zeroes(plaintext)
+            plaintext = confounder + pad_with_zeroes(plaintext, self.class::PADDING_SIZE)
             hmac = OpenSSL::HMAC.digest(self.class::HASH_FUNCTION, ki, plaintext)
 
             encrypt_basic(plaintext, ke) + hmac[0,self.class::MAC_SIZE]
@@ -81,7 +77,7 @@ module Rex
 
           # Functions may be overriden by subclasses:
           def random_to_key(seed)
-            if seed != seed_size
+            if seed.length != self.class::SEED_SIZE
               raise RuntimeError, 'Invalid seed size'
             end
 
@@ -93,9 +89,9 @@ module Rex
 
           # Pads the provided data to a multiple of block_length
           # Zeroes are added at the end
-          def pad_with_zeroes(data)
-            pad_length = self.class::BLOCK_SIZE - (data.length % self.class::BLOCK_SIZE)
-            pad_length %= self.class::BLOCK_SIZE # In case it's a perfect multiple, do no padding
+          def pad_with_zeroes(data, padding_size)
+            pad_length = padding_size - (data.length % padding_size)
+            pad_length %= padding_size # In case it's a perfect multiple, do no padding
             return data + "\x00" * pad_length
           end
           
