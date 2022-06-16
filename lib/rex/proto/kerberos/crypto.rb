@@ -23,6 +23,10 @@ module Rex
             Rex::Proto::Kerberos::Crypto::Des3CbcSha1.new
           when RC4_HMAC
             Rex::Proto::Kerberos::Crypto::Rc4Hmac.new
+          when AES128
+            Rex::Proto::Kerberos::Crypto::Aes128CtsSha1.new
+          when AES256
+            Rex::Proto::Kerberos::Crypto::Aes256CtsSha1.new
           else
             raise ::NotImplementedError, 'EncryptedDat schema is not supported'
           end
