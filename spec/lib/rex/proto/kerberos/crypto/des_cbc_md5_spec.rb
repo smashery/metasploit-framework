@@ -53,4 +53,57 @@ RSpec.describe Rex::Proto::Kerberos::Crypto::DesCbcMd5 do
     des_key = encryptor.string_to_key(password, salt)
     expect(des_key).to eq("\xc4\xbf\x6b\x25\xad\xf7\xa4\xf8")
   end
+
+  it 'Decryption inverts encryption' do
+    plaintext = "The quick brown fox jumps over the lazy dog"
+    key = "\xc4\xbf\x6b\x25\xad\xf7\xa4\xf8"
+    msg_type = 4
+    encrypted = encryptor.encrypt(plaintext, key, msg_type)
+    decrypted = encryptor.decrypt(encrypted, key, msg_type)
+    
+    # Null bytes at the end are expected, per RFC3961:
+    #
+    # The result of the decryption may be longer than the original
+    # plaintext, as, for example, when the encryption mode adds padding
+    # to reach a multiple of a block size.  If this is the case, any
+    # extra octets must come after the decoded plaintext.  An
+    # application protocol that needs to know the exact length of the
+    # message must encode a length or recognizable "end of message"
+    # marker within the plaintext
+
+    while plaintext.length % described_class::BLOCK_SIZE != 0
+      plaintext += "\x00"
+    end
+
+    expect(decrypted).to eq(plaintext)
+  end
+
+  it 'Broken MAC causes integrity failure' do
+    plaintext = "The quick brown fox jumps over the lazy dog"
+    key = "\xc4\xbf\x6b\x25\xad\xf7\xa4\xf8"
+    msg_type = 4
+    encrypted = encryptor.encrypt(plaintext, key, msg_type)
+    # Let's change one bit of the ciphertext, which should exist somewhere inside the checksum
+    mod_byte = encrypted[11].ord
+    mod_byte ^= 1
+    encrypted = encrypted[0,11] + mod_byte.chr + encrypted[12,encrypted.length]
+    expect { encryptor.decrypt(encrypted, key, msg_type) }.to raise_error(RuntimeError, 'HMAC integrity error')
+  end
+
+  it 'Invalid length throws error' do
+    plaintext = "The quick brown fox jumps over the lazy dog"
+    key = "\xc4\xbf\x6b\x25\xad\xf7\xa4\xf8"
+    msg_type = 4
+    encrypted = encryptor.encrypt(plaintext, key, msg_type)
+    # Let's remove one byte
+    encrypted = encrypted[0,encrypted.length - 1]
+    expect { encryptor.decrypt(encrypted, key, msg_type) }.to raise_error(RuntimeError, 'Ciphertext is not a multiple of block length')
+  end
+
+  it 'Short length throws error' do
+    key = "\xc4\xbf\x6b\x25\xad\xf7\xa4\xf8"
+    msg_type = 4
+    encrypted = 'abc'
+    expect { encryptor.decrypt(encrypted, key, msg_type) }.to raise_error(RuntimeError, 'Ciphertext too short')
+  end
 end

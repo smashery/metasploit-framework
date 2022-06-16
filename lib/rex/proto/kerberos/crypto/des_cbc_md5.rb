@@ -1,13 +1,14 @@
 # -*- coding: binary -*-
 
+require 'rex/text'
+
 module Rex
   module Proto
     module Kerberos
       module Crypto
-        class DesCbcMd5
+        class DesCbcMd5 < BlockCipherBase
           HASH_LENGTH = 16
-          BLOCK_LENGTH = 8
-
+          BLOCK_SIZE = 8
 
           def string_to_key(string, salt)
             reverse_this_block = false
@@ -15,10 +16,10 @@ module Rex
 
             utf8_encoded = (string + salt).encode('UTF-8').bytes.pack('C*')
 
-            data = pad_with_zeroes(utf8_encoded, BLOCK_LENGTH)
+            data = pad_with_zeroes(utf8_encoded)
             data_as_blocks = data.unpack('C*')
 
-            data_as_blocks.each_slice(BLOCK_LENGTH) do |block|
+            data_as_blocks.each_slice(BLOCK_SIZE) do |block|
               result = []
               block.each do |byte|
                 # Ignore the Most Significant Bit of each byte
@@ -51,10 +52,11 @@ module Rex
 
             cipher = OpenSSL::Cipher.new('des-cbc')
             cipher.encrypt
+            cipher.padding = 0
             cipher.key = tempkey
             cipher.iv = tempkey
 
-            encrypted = cipher.update(data)
+            encrypted = cipher.update(data) + cipher.final
             checksumkey = encrypted
 
             checksumkey = encrypted[-8,8]
@@ -75,38 +77,40 @@ module Rex
           # @param msg_type [Integer] ignored for this algorithm
           # @return [String] the decrypted cipher
           # @raise [RuntimeError] if decryption doesn't succeed
-          def decrypt(cipher, key, msg_type)
-            unless cipher && cipher.length > BLOCK_LENGTH + HASH_LENGTH
-              raise ::RuntimeError, 'DES-CBC decryption failed'
-            end
+          def decrypt(ciphertext, key, msg_type)
+            raise ::RuntimeError, 'Ciphertext too short' unless ciphertext && ciphertext.length > BLOCK_SIZE + HASH_LENGTH
+            raise ::RuntimeError, 'Ciphertext is not a multiple of block length' unless ciphertext.length % BLOCK_SIZE == 0
+
 
             cipher = OpenSSL::Cipher.new('des-cbc')
             cipher.decrypt
+            cipher.padding = 0
             cipher.key = key
-            decrypted = cipher.update(data)
+            decrypted = cipher.update(ciphertext)
 
-            confounder = decrypted[0, BLOCK_LENGTH]
-            checksum = decrypted[BLOCK_LENGTH, HASH_LENGTH]
-            plaintext = decrypted[BLOCK_LENGTH + HASH_LENGTH, decrypted.length]
+            confounder = decrypted[0, BLOCK_SIZE]
+            checksum = decrypted[BLOCK_SIZE, HASH_LENGTH]
+            plaintext = decrypted[BLOCK_SIZE + HASH_LENGTH, decrypted.length]
             hashed_data = confounder + "\x00" * HASH_LENGTH + plaintext
 
             hash_fn = OpenSSL::Digest.new('MD5')
 
             if hash_fn.digest(hashed_data) != checksum
-              raise ::RuntimeError, 'DES-CBC decryption failed, incorrect checksum verification'
+              raise ::RuntimeError, 'HMAC integrity error'
             end
 
-            decrypted
+            plaintext
           end
 
           # Encrypts the cipher using DES-CBC-MD5 schema
           #
           # @param data [String] the data to encrypt
           # @param key [String] the key to encrypt
+          # @param msg_type [Integer] ignored for this algorithm
           # @return [String] the encrypted data
-          def encrypt(data, key)
-            confounder = Rex::Text::rand_text(BLOCK_LENGTH)
-            padded_data = pad_with_zeroes(data, BLOCK_LENGTH)
+          def encrypt(plaintext, key, msg_type)
+            confounder = Rex::Text::rand_text(BLOCK_SIZE)
+            padded_data = pad_with_zeroes(plaintext)
             hashed_data = confounder + "\x00" * HASH_LENGTH + padded_data
             hash_fn = OpenSSL::Digest.new('MD5')
             checksum = hash_fn.digest(hashed_data)
@@ -117,21 +121,14 @@ module Rex
 
             cipher = OpenSSL::Cipher.new('des-cbc')
             cipher.encrypt
+            cipher.padding = 0
             cipher.key = key
-            encrypted = cipher.update(plaintext)
+            encrypted = cipher.update(plaintext) + cipher.final
 
             encrypted
           end
 
           private
-
-          # Pads the provided data to a multiple of block_length
-          # Zeroes are added at the end
-          def pad_with_zeroes(data, block_length)
-            pad_length = block_length - (data.length % block_length)
-            pad_length %= block_length # In case it's a perfect multiple, do no padding
-            return data + "\x00" * pad_length
-          end
 
           def fixparity(deskey)
             temp = []
@@ -169,25 +166,6 @@ module Rex
 
             result
           end
-          def _is_weak_des_key(keybytes)
-            ["\x01\x01\x01\x01\x01\x01\x01\x01",
-             "\xFE\xFE\xFE\xFE\xFE\xFE\xFE\xFE",
-             "\x1F\x1F\x1F\x1F\x0E\x0E\x0E\x0E",
-             "\xE0\xE0\xE0\xE0\xF1\xF1\xF1\xF1",
-             "\x01\xFE\x01\xFE\x01\xFE\x01\xFE",
-             "\xFE\x01\xFE\x01\xFE\x01\xFE\x01",
-             "\x1F\xE0\x1F\xE0\x0E\xF1\x0E\xF1",
-             "\xE0\x1F\xE0\x1F\xF1\x0E\xF1\x0E",
-             "\x01\xE0\x01\xE0\x01\xF1\x01\xF1",
-             "\xE0\x01\xE0\x01\xF1\x01\xF1\x01",
-             "\x1F\xFE\x1F\xFE\x0E\xFE\x0E\xFE",
-             "\xFE\x1F\xFE\x1F\xFE\x0E\xFE\x0E",
-             "\x01\x1F\x01\x1F\x01\x0E\x01\x0E",
-             "\x1F\x01\x1F\x01\x0E\x01\x0E\x01",
-             "\xE0\xFE\xE0\xFE\xF1\xFE\xF1\xFE",
-             "\xFE\xE0\xFE\xE0\xFE\xF1\xFE\xF1"].include?(keybytes)
-          end
-
         end
       end
     end
