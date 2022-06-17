@@ -79,7 +79,8 @@ class MetasploitModule < Msf::Auxiliary
       server_name: "krbtgt/#{domain}",
       realm: "#{domain}",
       key: password_digest,
-      pa_data: pre_auth
+      pa_data: pre_auth,
+      etype: etype
     )
 
     unless res.msg_type == Rex::Proto::Kerberos::Model::AS_REP

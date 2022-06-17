@@ -106,7 +106,8 @@ module Rex
           def make_checksum(data)
             checksummer = Rex::Proto::Kerberos::Crypto::Checksum::from_checksum_type(checksum)
             key = nil # TODO 
-            checksummer.checksum(key, CRYPTO_MSG_TYPE, data)
+
+            checksummer.checksum(key, Rex::Proto::Kerberos::Crypto::KeyUsage::KERB_NON_KERB_CKSUM_SALT, data)
           end
         end
       end

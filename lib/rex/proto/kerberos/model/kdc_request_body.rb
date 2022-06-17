@@ -87,7 +87,7 @@ module Rex
             data = self.encode
             key = nil # TODO
             checksummer = Rex::Proto::Kerberos::Crypto::Checksum::from_checksum_type(etype)
-            checksummer.checksum(key, CRYPTO_MSG_TYPE, data)
+            checksummer.checksum(key, Rex::Proto::Kerberos::Crypto::KeyUsage::KERB_NON_KERB_CKSUM_SALT, data)
           end
 
           private
