@@ -38,6 +38,7 @@ module Rex
           end
 
           # Decrypts the cipher using RC4-HMAC schema
+          # https://datatracker.ietf.org/doc/rfc4757/
           #
           # @param ciphertext [String] the data to decrypt
           # @param key [String] the key to decrypt
@@ -72,6 +73,7 @@ module Rex
           end
 
           # Encrypts the cipher using RC4-HMAC schema
+          # https://datatracker.ietf.org/doc/rfc4757/
           #
           # @param plaintext [String] the data to encrypt
           # @param key [String] the key to encrypt
