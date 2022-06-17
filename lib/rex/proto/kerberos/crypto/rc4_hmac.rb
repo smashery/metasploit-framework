@@ -12,11 +12,12 @@ module Rex
           #
           # @param password [String] The password to use as the basis for key generation
           # @param salt [String] A salt (usually based on domain and username)
-          # @param iterations [Integer] Unused for this encryption type
+          # @param params [String] Unused for this encryption type
           # @return [String] The derived key
-          def string_to_key(password, salt=nil, iterations=nil)
-            raise ::RuntimeError, 'Iterations not supported for DES3' unless iterations == nil
-            raise ::RuntimeError, 'Salt not supported for DES3' unless iterations == nil
+          def string_to_key(password, salt=nil, params=nil)
+            print_line("salt is #{salt}")
+            raise ::RuntimeError, 'Params not supported for RC4_HMAC' unless params == nil
+            raise ::RuntimeError, 'Salt not supported for RC4_HMAC' unless salt == nil
             # Salt is unused in Rc4
             unicode_password = Rex::Text.to_unicode(password)
             password_digest = OpenSSL::Digest.digest('MD4', unicode_password)

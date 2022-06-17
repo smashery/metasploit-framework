@@ -13,6 +13,9 @@ module Rex
           # @!attribute msg_type
           #   @return [Integer] The type of a protocol message
           attr_accessor :msg_type
+          # @!attribute padata
+          #   @return [Rex::Proto::Kerberos::Model::PaData] The pre-authentication dat
+          attr_accessor :padata
           # @!attribute crealm
           #   @return [String] The realm part of the client's principal identifier
           attr_accessor :crealm
@@ -73,6 +76,8 @@ module Rex
                 self.pvno = decode_pvno(val)
               when 1
                 self.msg_type = decode_msg_type(val)
+              when 2
+                self.padata = decode_padata(val)
               when 3
                 self.crealm = decode_crealm(val)
               when 4
@@ -82,7 +87,7 @@ module Rex
               when 6
                 self.enc_part = decode_enc_part(val)
               else
-                raise ::Rex::Proto::Kerberos::Model::Error::KerberosDecodingError, 'Failed to decode KDC-RESPONSE SEQUENCE'
+                raise ::Rex::Proto::Kerberos::Model::Error::KerberosDecodingError, "Failed to decode KDC-RESPONSE SEQUENCE (#{val.tag})"
               end
             end
           end
@@ -101,6 +106,14 @@ module Rex
           # @return [Integer]
           def decode_msg_type(input)
             input.value[0].value.to_i
+          end
+
+          # Decodes the padata field
+          #
+          # @param input [OpenSSL::ASN1::ASN1Data] the input to decode from
+          # @return [Rex::Proto::Kerberos::Model::PaData]
+          def decode_padata(input)
+            Rex::Proto::Kerberos::Model::PaData.decode(input.value[0])
           end
 
           # Decodes the crealm field

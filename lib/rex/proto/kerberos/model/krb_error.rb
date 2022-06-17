@@ -69,6 +69,11 @@ module Rex
             raise ::NotImplementedError, 'KrbError encoding not supported'
           end
 
+          # Interpret our error data (e_data) as a PaData type (in the case of it being ERR-PREAUTH-REQUIRED)
+          def e_data_as_pa_data
+            Rex::Proto::Kerberos::Model::PaData.decode(self.e_data)
+          end
+
           private
 
           # Decodes a Rex::Proto::Kerberos::Model::KrbError from an String

@@ -20,9 +20,9 @@ module Rex
           #
           # @param password [String] The password to use as the basis for key generation
           # @param salt [String] A salt (usually based on domain and username)
-          # @param iterations [Integer] The number of iterations used during key generation (only used in AES, and even then not usually provided)
+          # @param params [String] A cipher-specific parameter (currently only used in AES, and even then not usually provided)
           # @return [String] The derived key
-          def string_to_key(password, salt, iterations=nil)
+          def string_to_key(password, salt, params=nil)
             raise NotImplementedError
           end
 

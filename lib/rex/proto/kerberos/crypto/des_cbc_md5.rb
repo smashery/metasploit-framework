@@ -15,10 +15,10 @@ module Rex
           #
           # @param password [String] The password to use as the basis for key generation
           # @param salt [String] A salt (usually based on domain and username)
-          # @param iterations [Integer] Unused for this encryption type
+          # @param params [String] Unused for this encryption type
           # @return [String] The derived key
-          def string_to_key(password, salt, iterations=nil)
-            raise ::RuntimeError, 'Iterations not supported for DES' unless iterations == nil
+          def string_to_key(password, salt, params=nil)
+            raise ::RuntimeError, 'Params not supported for DES' unless params == nil
             reverse_this_block = false
             tempstring = [0,0,0,0,0,0,0,0]
 
