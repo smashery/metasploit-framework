@@ -67,7 +67,7 @@ module Rex
               return ''
             end
 
-            encryptor = get_kerberos_encryptor(etype)
+            encryptor = Rex::Proto::Kerberos::Crypto::Encryption::from_etype(etype)
             encryptor.decrypt(cipher, key, msg_type)
           end
 

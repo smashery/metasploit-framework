@@ -67,7 +67,7 @@ module Rex
           # @raise [NotImplementedError] if the encryption schema isn't supported
           def encrypt(etype, key)
             data = self.encode
-            encryptor = get_kerberos_encryptor(etype)
+            encryptor = Rex::Proto::Kerberos::Crypto::Encryption::from_etype(etype)
             encryptor.encrypt(data, key, Rex::Proto::Kerberos::Crypto::KeyUsage::TGS_REQ_PA_TGS_REQ_AP_REQ_AUTHENTICATOR)
           end
 

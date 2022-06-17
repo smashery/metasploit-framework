@@ -104,7 +104,8 @@ module Rex
           # @return [String] the checksum result
           # @raise [NotImplementedError] if checksum schema isn't supported
           def make_checksum(data)
-            checksummer = get_kerberos_checksummer(checksum)
+            checksummer = Rex::Proto::Kerberos::Crypto::Checksum::from_checksum_type(checksum)
+            key = nil # TODO 
             checksummer.checksum(key, CRYPTO_MSG_TYPE, data)
           end
         end

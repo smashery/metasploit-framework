@@ -85,7 +85,8 @@ module Rex
           # @raise [NotImplementedError] if the encryption schema isn't supported
           def checksum(etype)
             data = self.encode
-            checksummer = get_kerberos_checksummer(etype)
+            key = nil # TODO
+            checksummer = Rex::Proto::Kerberos::Crypto::Checksum::from_checksum_type(etype)
             checksummer.checksum(key, CRYPTO_MSG_TYPE, data)
           end
 

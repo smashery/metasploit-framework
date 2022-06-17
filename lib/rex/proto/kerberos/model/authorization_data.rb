@@ -48,7 +48,7 @@ module Rex
           def encrypt(etype, key)
             data = self.encode
 
-            encryptor = get_kerberos_encryptor(etype)
+            encryptor = Rex::Proto::Kerberos::Crypto::Encryption::from_etype(etype)
             encryptor.encrypt(data, key, 5)
           end
 

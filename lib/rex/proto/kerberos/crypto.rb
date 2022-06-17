@@ -32,9 +32,9 @@ module Rex
           SHA1_AES256 = 16
           HMAC_MD5 = -138
 
-          def get_checksummer(ctype)
+          def self.from_checksum_type(ctype)
             checksummers = {
-              RSA_MD5     => Rex::Proto::Kerberos::Crypto::RsaMd5Checksum,
+              RSA_MD5     => Rex::Proto::Kerberos::Crypto::RsaMd5,
               MD5_DES     => Rex::Proto::Kerberos::Crypto::DesCbcMd5,
               SHA1_DES3   => Rex::Proto::Kerberos::Crypto::Des3CbcSha1,
               SHA1_AES128 => Rex::Proto::Kerberos::Crypto::Aes128CtsSha1,
@@ -50,16 +50,20 @@ module Rex
 
         end
 
-        module Encryptors
+        module Encryption
           DES_CBC_MD5 = 3
           DES3_CBC_SHA1 = 16
           AES128 = 17
           AES256 = 18
           RC4_HMAC = 23
 
+          # The default etypes to offer to the Kerberos server when none is provided
           DefaultOfferedEtypes = [AES128, AES256, RC4_HMAC, DES_CBC_MD5, DES3_CBC_SHA1]
 
-          def get_encryptor(etype)
+          # The individual etype used by an encryptor when none is provided
+          DefaultEncryptionType = RC4_HMAC
+
+          def self.from_etype(etype)
             encryptors = {
               DES_CBC_MD5 =>   Rex::Proto::Kerberos::Crypto::DesCbcMd5,
               DES3_CBC_SHA1 => Rex::Proto::Kerberos::Crypto::Des3CbcSha1,
@@ -74,8 +78,6 @@ module Rex
             result.new
           end
         end
-
-        ENC_TGS_RESPONSE = 9
       end
     end
   end

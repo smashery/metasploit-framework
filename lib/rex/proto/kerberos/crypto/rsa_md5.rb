@@ -4,7 +4,7 @@ module Rex
   module Proto
     module Kerberos
       module Crypto
-        class RsaMd5Checksum
+        class RsaMd5
           # The MD5 checksum of the data
           #
           # @param key [String] ignored for this checksum type
