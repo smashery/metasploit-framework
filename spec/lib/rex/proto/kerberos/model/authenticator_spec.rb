@@ -33,7 +33,7 @@ RSpec.describe Rex::Proto::Kerberos::Model::Authenticator do
       )
 
       enc_key = Rex::Proto::Kerberos::Model::EncryptionKey.new(
-        type: Rex::Proto::Kerberos::Crypto::RC4_HMAC,
+        type: Rex::Proto::Kerberos::Crypto::Encryptors::RC4_HMAC,
         value: "\x7d\x63\xdd\x79\x73\x67\xce\x86\xbb\x5f\x2b\x8a\xba\x58\xfd\x6e"
       )
 

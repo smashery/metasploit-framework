@@ -57,6 +57,8 @@ module Rex
           AES256 = 18
           RC4_HMAC = 23
 
+          DefaultOfferedEtypes = [AES128, AES256, RC4_HMAC, DES_CBC_MD5, DES3_CBC_SHA1]
+
           def get_encryptor(etype)
             encryptors = {
               DES_CBC_MD5 =>   Rex::Proto::Kerberos::Crypto::DesCbcMd5,

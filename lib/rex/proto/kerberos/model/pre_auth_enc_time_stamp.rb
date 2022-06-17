@@ -8,8 +8,6 @@ module Rex
         # as pre authenticated data
         class PreAuthEncTimeStamp < Element
 
-          CRYPTO_MSG_TYPE = 1
-
           # @!attribute pa_time_stamp
           #   @return [Time] client's time
           attr_accessor :pa_time_stamp
@@ -56,7 +54,7 @@ module Rex
           def encrypt(etype, key)
             data = self.encode
             encryptor = get_kerberos_encryptor(etype)
-            encryptor.encrypt(data, key, CRYPTO_MSG_TYPE)
+            encryptor.encrypt(data, key, Rex::Proto::Kerberos::Model::KeyUsage::AS_REQ_PA_ENC_TIMESTAMP)
           end
 
           private

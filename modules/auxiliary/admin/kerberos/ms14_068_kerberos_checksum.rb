@@ -67,7 +67,7 @@ class MetasploitModule < Msf::Auxiliary
     password_digest = OpenSSL::Digest.digest('MD4', unicode_password)
 
     pre_auth = []
-    pre_auth << build_as_pa_time_stamp(key: password_digest, etype: Rex::Proto::Kerberos::Crypto::RC4_HMAC)
+    pre_auth << build_as_pa_time_stamp(key: password_digest, etype: Rex::Proto::Kerberos::Crypto::Encryptors::RC4_HMAC)
     pre_auth << build_pa_pac_request
     pre_auth
 
@@ -114,7 +114,7 @@ class MetasploitModule < Msf::Auxiliary
     )
 
     auth_data = build_pac_authorization_data(pac: pac)
-    sub_key = build_subkey(subkey_type: Rex::Proto::Kerberos::Crypto::RC4_HMAC)
+    sub_key = build_subkey(subkey_type: Rex::Proto::Kerberos::Crypto::Encryptors::RC4_HMAC)
 
     print_status("#{peer} - Sending TGS-REQ...")
 

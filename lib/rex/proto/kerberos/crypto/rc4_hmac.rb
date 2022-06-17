@@ -14,7 +14,7 @@ module Rex
           # @param salt [String] A salt (usually based on domain and username)
           # @param iterations [Integer] Unused for this encryption type
           # @return [String] The derived key
-          def string_to_key(password, salt, iterations=nil)
+          def string_to_key(password, salt=nil, iterations=nil)
             raise ::RuntimeError, 'Iterations not supported for DES3' unless iterations == nil
             raise ::RuntimeError, 'Salt not supported for DES3' unless iterations == nil
             # Salt is unused in Rc4
