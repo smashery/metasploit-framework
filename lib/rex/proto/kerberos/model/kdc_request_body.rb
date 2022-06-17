@@ -85,16 +85,8 @@ module Rex
           # @raise [NotImplementedError] if the encryption schema isn't supported
           def checksum(etype)
             data = self.encode
-
-            res = ''
-            case etype
-            when RSA_MD5
-              res = checksum_rsa_md5(data)
-            else
-              raise ::NotImplementedError, 'EncryptedData schema is not supported'
-            end
-
-            res
+            checksummer = get_kerberos_checksummer(etype)
+            checksummer.checksum(key, CRYPTO_MSG_TYPE, data)
           end
 
           private
