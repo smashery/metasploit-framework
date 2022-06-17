@@ -15,7 +15,6 @@ module Rex
           # @param params [String] Unused for this encryption type
           # @return [String] The derived key
           def string_to_key(password, salt=nil, params=nil)
-            print_line("salt is #{salt}")
             raise ::RuntimeError, 'Params not supported for RC4_HMAC' unless params == nil
             raise ::RuntimeError, 'Salt not supported for RC4_HMAC' unless salt == nil
             # Salt is unused in Rc4
