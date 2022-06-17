@@ -16,15 +16,34 @@ module Rex
           # encrypt_basic
           # string_to_key
 
-          def string_to_key(string, salt)
+          # Derive an encryption key based on a password and salt for the given cipher type
+          #
+          # @param password [String] The password to use as the basis for key generation
+          # @param salt [String] A salt (usually based on domain and username)
+          # @param iterations [Integer] The number of iterations used during key generation (only used in AES, and even then not usually provided)
+          # @return [String] The derived key
+          def string_to_key(password, salt, iterations=nil)
             raise NotImplementedError
+          end
+
+          # Use this class's encryption routines to create a checksum of the data based on the key and message type
+          #
+          # @param key [String] the key to use to generate the checksum
+          # @param msg_type [Integer] type of kerberos method in use
+          # @param data [String] the data to checksum
+          # @return [String] the generated checksum
+          def checksum(key, msg_type, data)
+            kc = derive(key, [msg_type, 0x99].pack('NC'))
+            hmac = OpenSSL::HMAC.digest(self.class::HASH_FUNCTION, kc, data)
+
+            hmac[0, self.class::MAC_SIZE]
           end
 
           # Decrypts the cipher
           #
-          # @param cipher [String] the data to decrypt
+          # @param ciphertext_and_mac [String] the data to decrypt
           # @param key [String] the key to decrypt
-          # @param msg_type [Integer] ignored for this algorithm
+          # @param msg_type [Integer] type of kerberos message
           # @return [String] the decrypted cipher
           # @raise [RuntimeError] if decryption doesn't succeed
           def decrypt(ciphertext_and_mac, key, msg_type)
@@ -50,8 +69,9 @@ module Rex
 
           # Encrypts the cipher
           #
-          # @param data [String] the data to encrypt
+          # @param plaintext [String] the data to encrypt
           # @param key [String] the key to encrypt
+          # @param msg_type [Integer] type of kerberos message
           # @param confounder [String] Optionally force the confounder to a specific value
           # @return [String] the encrypted data
           def encrypt(plaintext, key, msg_type, confounder=nil)

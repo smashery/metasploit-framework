@@ -11,12 +11,18 @@ module Rex
           BLOCK_SIZE = 8
           PADDING_SIZE = 8
 
-          def string_to_key(string, salt, iterations=nil)
+          # Derive an encryption key based on a password and salt for the given cipher type
+          #
+          # @param password [String] The password to use as the basis for key generation
+          # @param salt [String] A salt (usually based on domain and username)
+          # @param iterations [Integer] Unused for this encryption type
+          # @return [String] The derived key
+          def string_to_key(password, salt, iterations=nil)
             raise ::RuntimeError, 'Iterations not supported for DES' unless iterations == nil
             reverse_this_block = false
             tempstring = [0,0,0,0,0,0,0,0]
 
-            utf8_encoded = (string + salt).encode('UTF-8').bytes.pack('C*')
+            utf8_encoded = (password + salt).encode('UTF-8').bytes.pack('C*')
 
             data = pad_with_zeroes(utf8_encoded, PADDING_SIZE)
             data_as_blocks = data.unpack('C*')
@@ -74,7 +80,7 @@ module Rex
 
           # Decrypts the cipher using DES-CBC-MD5 schema
           #
-          # @param cipher [String] the data to decrypt
+          # @param ciphertext [String] the data to decrypt
           # @param key [String] the key to decrypt
           # @param msg_type [Integer] ignored for this algorithm
           # @return [String] the decrypted cipher
@@ -106,7 +112,7 @@ module Rex
 
           # Encrypts the cipher using DES-CBC-MD5 schema
           #
-          # @param data [String] the data to encrypt
+          # @param plaintext [String] the data to encrypt
           # @param key [String] the key to encrypt
           # @param msg_type [Integer] ignored for this algorithm
           # @param confounder [String] Optionally force the confounder to a specific value

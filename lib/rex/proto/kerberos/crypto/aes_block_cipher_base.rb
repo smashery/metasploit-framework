@@ -5,8 +5,8 @@ module Rex
   module Proto
     module Kerberos
       module Crypto
+        # Base class for RFC3962 AES encryption classes
         class AesBlockCipherBase < BlockCipherBase
-          # Base class for AES encryption classes
 
           BLOCK_SIZE = 16
           PADDING_SIZE = 1
@@ -15,9 +15,15 @@ module Rex
 
           # Subclasses must also define ENCRYPT_CIPHER_NAME and DECRYPT_CIPHER_NAME
       
-          def string_to_key(string, salt, iterations = nil)
+          # Derive an encryption key based on a password and salt for the given cipher type
+          #
+          # @param password [String] The password to use as the basis for key generation
+          # @param salt [String] A salt (usually based on domain and username)
+          # @param iterations [Integer] The number of iterations used during key generation
+          # @return [String] The derived key
+          def string_to_key(password, salt, iterations = nil)
             iterations = 4096 if iterations == nil
-            seed = OpenSSL::KDF.pbkdf2_hmac(string, salt: salt, iterations: iterations, length: self.class::SEED_SIZE, hash: HASH_FUNCTION)
+            seed = OpenSSL::KDF.pbkdf2_hmac(password, salt: salt, iterations: iterations, length: self.class::SEED_SIZE, hash: HASH_FUNCTION)
             tkey = random_to_key(seed)
             derive(tkey, 'kerberos'.encode('utf-8'))
           end

@@ -62,6 +62,30 @@ RSpec.describe Rex::Proto::Kerberos::Crypto::Aes256CtsSha1 do
     expect(aes_key).to eq("\x4b\x6d\x98\x39\xf8\x44\x06\xdf\x1f\x09\xcc\x16\x6d\xb4\xb8\x3c\x57\x18\x48\xb7\x84\xa3\xd6\xbd\xc3\x46\x58\x9a\x3e\x39\x3f\x9e")
   end
 
+  it 'Crypto matches expected values' do
+    # Test case based off impackec
+    key = ['F1C795E9248A09338D82C3F8D5B567040B0110736845041347235B1404231398'].pack('H*')
+    confounder = ['E45CA518B42E266AD98E165E706FFB60'].pack('H*')
+    keyusage = 4
+    plaintext = '30 bytes bytes bytes bytes byt'
+    ciphertext = ['D1137A4D634CFECE924DBC3BF6790648BD5CFF7DE0E7B99460211D0DAEF3D79A295C688858F3B34B9CBD6EEBAE81DAF6B734D4D498B6714F1C1D'].pack('H*')
+    encrypted = encryptor.encrypt(plaintext, key, keyusage, confounder)
+    decrypted = encryptor.decrypt(ciphertext, key, keyusage)
+
+    expect(encrypted).to eq(ciphertext)
+    expect(decrypted).to eq(plaintext)
+  end
+
+  it 'Checksum is as expected' do
+    # Test case based off impacket
+    key = ['B1AE4CD8462AFF1677053CC9279AAC30B796FB81CE21474DD3DDBCFEA4EC76D7'].pack('H*')
+    keyusage = 4
+    plaintext = 'fourteen'
+    expected_checksum = ['E08739E3279E2903EC8E3836'].pack('H*')
+    checksum = encryptor.checksum(key, keyusage, plaintext)
+    expect(checksum).to eq(expected_checksum)
+  end
+
   it 'Decryption inverts encryption' do
     print("\n\nDECRYPTING\n\n")
     plaintext = "The quick brown fox jumps over the lazy dog"

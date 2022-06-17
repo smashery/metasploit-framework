@@ -12,6 +12,12 @@ module Rex
           MAC_SIZE = 20
           HASH_FUNCTION = 'SHA1'
 
+          # Derive an encryption key based on a password and salt for the given cipher type
+          #
+          # @param string [Stringl The password to use as the basis for key generation
+          # @param salt [String] A salt (usually based on domain and username)
+          # @param iterations [Integer] Unused for this encryption type
+          # @return [String] The derived key
           def string_to_key(string, salt, iterations=nil)
             raise ::RuntimeError, 'Iterations not supported for DES' unless iterations == nil
             utf8_encoded = (string + salt).encode('UTF-8').bytes

@@ -46,6 +46,44 @@ RSpec.describe Rex::Proto::Kerberos::Crypto::Des3CbcSha1 do
     expect(des_key).to eq(["85763726585dbc1cce6ec43e1f751f07f1c4cbb098f40b19"].pack("H*"))
   end
 
+  it 'Checksum is as expected' do
+    # Test case based off impacket
+    key = ['7A25DF8992296DCEDA0E135BC4046E2375B3C14C98FBC162'].pack('H*')
+    keyusage = 2
+    plaintext = 'six seven'
+    expected_checksum = ['0EEFC9C3E049AABC1BA5C401677D9AB699082BB4'].pack('H*')
+    checksum = encryptor.checksum(key, keyusage, plaintext)
+    expect(checksum).to eq(expected_checksum)
+  end
+
+  it 'Crypto matches expected values' do
+    # Test case based off impacket
+    key = ['0DD52094E0F41CECCB5BE510A764B35176E3981332F1E598'].pack('H*')
+    confounder = ['94690A17B2DA3C9B'].pack('H*')
+    keyusage = 3
+    plaintext = '13 bytes byte'
+    ciphertext = ['839A17081ECBAFBCDC91B88C6955DD3C4514023CF177B77BF0D0177A16F705E849CB7781D76A316B193F8D30'].pack('H*')
+    encrypted = encryptor.encrypt(plaintext, key, keyusage, confounder)
+    decrypted = encryptor.decrypt(ciphertext, key, keyusage)
+
+    # Null bytes at the end are expected, per RFC3961:
+    #
+    # The result of the decryption may be longer than the original
+    # plaintext, as, for example, when the encryption mode adds padding
+    # to reach a multiple of a block size.  If this is the case, any
+    # extra octets must come after the decoded plaintext.  An
+    # application protocol that needs to know the exact length of the
+    # message must encode a length or recognizable "end of message"
+    # marker within the plaintext
+
+    while plaintext.length % described_class::BLOCK_SIZE != 0
+      plaintext += "\x00"
+    end
+
+    expect(encrypted).to eq(ciphertext)
+    expect(decrypted).to eq(plaintext)
+  end
+
   it 'Decryption inverts encryption' do
     plaintext = "The quick brown fox jumps over the lazy dog"
     key = ["85763726585dbc1cce6ec43e1f751f07f1c4cbb098f40b19"].pack("H*")
