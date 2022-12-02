@@ -129,6 +129,10 @@ class Def_windows_ntdll
       ["PDWORD","BuildNumber","inout"]
     ])
 
+    dll.add_function('RtlGetVersion', 'VOID',[
+      ["PBLOB","VersionInformation","inout"]
+    ])
+
     dll.add_function('RtlInitAnsiString', 'VOID',[
       ["PBLOB","DestinationString","inout"],
       ["PBLOB","SourceString","inout"],

@@ -3,6 +3,7 @@
 module Msf::Post::Windows::Priv
   include ::Msf::Post::Windows::Accounts
   include Msf::Post::Windows::Registry
+  include Msf::Post::Windows::Version
   include Msf::Util::WindowsCryptoHelpers
 
   INTEGRITY_LEVEL_SID = {
