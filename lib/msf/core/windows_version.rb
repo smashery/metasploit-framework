@@ -1,4 +1,5 @@
 # -*- coding: binary -*-
+
 module Msf
   #
   # Represents the version of a Windows operating system
@@ -42,28 +43,28 @@ module Msf
     Win11_22H2 = Rex::Version.new('10.0.22621.0')
 
     module MajorRelease
-      NT351 = "Windows NT 3.51"
-      Win95 = "Windows 95"
-      Win98 = "Windows 98"
-      WinME = "Windows ME"
+      NT351 = 'Windows NT 3.51'.freeze
+      Win95 = 'Windows 95'.freeze
+      Win98 = 'Windows 98'.freeze
+      WinME = 'Windows ME'.freeze
 
-      XP = "Windows XP"
-      Server2003 = "Windows Server 2003"
+      XP = 'Windows XP'.freeze
+      Server2003 = 'Windows Server 2003'.freeze
 
-      Vista = "Windows Vista"
-      Server2008 = "Windows Server 2008"
-      
-      Win7 = "Windows 7"
-      Server2008R2 = "Windows 2008 R2"
+      Vista = 'Windows Vista'.freeze
+      Server2008 = 'Windows Server 2008'.freeze
 
-      Win8 = "Windows 8"
-      Server2012 = "Windows Server 2012"
+      Win7 = 'Windows 7'.freeze
+      Server2008R2 = 'Windows 2008 R2'.freeze
 
-      Win81 = "Windows 8.1"
-      Server2012R2 = "Windows Server 2012 R2"
+      Win8 = 'Windows 8'.freeze
+      Server2012 = 'Windows Server 2012'.freeze
 
-      Win10Plus = "Windows 10+"
-      Server2016Plus = "Windows Server 2016+"
+      Win81 = 'Windows 8.1'.freeze
+      Server2012R2 = 'Windows Server 2012 R2'.freeze
+
+      Win10Plus = 'Windows 10+'.freeze
+      Server2016Plus = 'Windows Server 2016+'.freeze
     end
 
     def initialize(major, minor, build, service_pack, product_type)
@@ -80,24 +81,25 @@ module Msf
     end
 
     # Is this OS a Windows Server instance?
-    def is_windows_server
+    def windows_server?
       # There are other types than just workstation/server/DC, but Microsoft's own documentation says
       # "If it's not Workstation, then it's Server"
       # https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-osversioninfoexa
-      self.product_type != VER_NT_WORKSTATION
+      product_type != VER_NT_WORKSTATION
     end
 
     # This Windows Server has been promoted to a DC
-    def is_domain_controller
-      self.product_type == VER_NT_DOMAIN_CONTROLLER
+    def domain_controller?
+      product_type == VER_NT_DOMAIN_CONTROLLER
     end
 
     # The name of the OS, as it is most commonly rendered. Includes
     def product_name
-      result = "Unknown Windows version: #{self._major}.#{self._minor}.#{self._build}"
-      result = major_release_name
-      result = "#{result} Service Pack #{self._service_pack}" if self.service_pack != 0
-      result = "#{result} Build #{self._build}" if build_number >= Win10Plus
+      result = "Unknown Windows version: #{_major}.#{_minor}.#{_build}"
+      name = major_release_name
+      result = major_release_name unless name.nil?
+      result = "#{result} Service Pack #{_service_pack}" if service_pack != 0
+      result = "#{result} Build #{_build}" if build_number >= Win10Plus
 
       result
     end
@@ -107,18 +109,18 @@ module Msf
     end
 
     # Is this version number from the Vista/Server 2008 generation of Windows OSes
-    def is_vista_or_2008
-      self.build_number.between?(Vista_SP0, Vista_SP2)
+    def vista_or_2008?
+      build_number.between?(Vista_SP0, Vista_SP2)
     end
 
     # Is this version number from the Windows 7/Server 2008 R2 generation of Windows OSes
-    def is_win7_or_2008r2
-      self.build_number.between?(Win7_SP0, Win7_SP1)
+    def win7_or_2008r2?
+      build_number.between?(Win7_SP0, Win7_SP1)
     end
 
     # Is this version number from the XP/Server 2003 generation of Windows OSes
-    def is_xp_or_2003
-      self.build_number.between?(XP_SP0, Server2003_SP2)
+    def xp_or_2003?
+      build_number.between?(XP_SP0, Server2003_SP2)
     end
 
     attr_accessor :_major, :_minor, :_build, :_service_pack, :product_type
@@ -127,30 +129,36 @@ module Msf
 
     # The major release within which this build fits
     def major_release_name
-      if self._major == 5
-        if self._minor == 1
+      if _major == 5
+        if _minor == 1
           return MajorRelease::XP
-        elsif self._minor == 2
-          return MajorRelease::Server2003 if is_windows_server
+        elsif _minor == 2
+          return MajorRelease::Server2003 if windows_server?
+
           return MajorRelease::XP
         end
-      elsif self._major == 6
-        if self._minor == 0
-          return MajorRelease::Server2008 if is_windows_server
+      elsif _major == 6
+        if _minor == 0
+          return MajorRelease::Server2008 if windows_server?
+
           return MajorRelease::Vista
-        elsif self._minor == 1
-          return MajorRelease::Server2008R2 if is_windows_server
+        elsif _minor == 1
+          return MajorRelease::Server2008R2 if windows_server?
+
           return MajorRelease::Win7
-        elsif self._minor == 2
-          return MajorRelease::Server2008R2 if is_windows_server
+        elsif _minor == 2
+          return MajorRelease::Server2008R2 if windows_server?
+
           return MajorRelease::Win8
-        elsif self._minor == 3
-          return MajorRelease::Server2008R2 if is_windows_server
+        elsif _minor == 3
+          return MajorRelease::Server2008R2 if windows_server?
+
           return MajorRelease::Win81
         end
-      elsif self._major == 10
-        if self._minor == 0
-          return MajorRelease::Server2016Plus if is_windows_server
+      elsif _major == 10
+        if _minor == 0
+          return MajorRelease::Server2016Plus if windows_server?
+
           return MajorRelease::Win10Plus
         end
       end

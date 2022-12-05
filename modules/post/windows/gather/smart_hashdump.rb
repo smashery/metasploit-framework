@@ -427,7 +427,7 @@ class MetasploitModule < Msf::Post
           rescue ::Exception => e
             print_error('Failed to dump hashes as SYSTEM, trying to migrate to another process')
 
-            if version.build_number.between?(Msf::WindowsVersion::Server2008_SP0, Msf::WindowsVersion::Server2012_R2) && version.is_windows_server
+            if version.build_number.between?(Msf::WindowsVersion::Server2008_SP0, Msf::WindowsVersion::Server2012_R2) && version.windows_server?
               move_to_sys
               file_local_write(pwdfile, inject_hashdump)
             else
@@ -454,7 +454,7 @@ class MetasploitModule < Msf::Post
               results = session.priv.getsystem
               if results[0]
                 print_good('Got SYSTEM privilege')
-                if version.build_number.between?(Msf::WindowsVersion::Server2008_SP0, Msf::WindowsVersion::Server2012_R2) && version.is_windows_server
+                if version.build_number.between?(Msf::WindowsVersion::Server2008_SP0, Msf::WindowsVersion::Server2012_R2) && version.windows_server?
                   # Migrate process since on Windows 2008 R2 getsystem
                   # does not set certain privilege tokens required to
                   # inject and dump the hashes.
