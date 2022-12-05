@@ -9,127 +9,6 @@ module Msf
     VER_NT_DOMAIN_CONTROLLER = 2
     VER_NT_SERVER = 3
 
-    class MajorRelease
-
-      def initialize(name, enum)
-        @name = name
-        @enum = enum
-      end
-
-      def to_s
-        @name
-      end
-
-      def >(other)
-        @enum > other.enum
-      end
-
-      def <(other)
-        @enum < other.enum
-      end
-
-      def ==(other)
-        @enum == other.enum
-      end
-
-      def >=(other)
-        @enum >= other.enum
-      end
-
-      def <=(other)
-        @enum <= other.enum
-      end
-
-      attr_reader :name, :enum
-
-      NT351 = MajorRelease.new("Windows NT 3.51", 1)
-      Win95 = MajorRelease.new("Windows 95",2)
-      Win98 = MajorRelease.new("Windows 98",3)
-      WinME = MajorRelease.new("Windows ME",4)
-
-      XP = MajorRelease.new("Windows XP",5)
-      Server2003 = MajorRelease.new("Windows Server 2003",5)
-
-      Vista = MajorRelease.new("Windows Vista",6)
-      Server2008 = MajorRelease.new("Windows Server 2008",6)
-      
-      Win7 = MajorRelease.new("Windows 7",7)
-      Server2008R2 = MajorRelease.new("Windows 2008 R2",7)
-
-      Win8 = MajorRelease.new("Windows 8",8)
-      Server2012 = MajorRelease.new("Windows Server 2012",8)
-
-      Win81 = MajorRelease.new("Windows 8.1",9)
-      Server2012R2 = MajorRelease.new("Windows Server 2012 R2",9)
-
-      Win10Plus = MajorRelease.new("Windows 10+",10)
-      Server2016Plus = MajorRelease.new("Windows Server 2016+",10)
-    end
-
-    def initialize(major, minor, build, service_pack, product_type)
-      self.major = major
-      self.minor = minor
-      self.build = build
-      self.service_pack = service_pack
-      self.product_type = product_type
-    end
-
-    def build_number
-      Rex::Version.new("#{major}.#{minor}.#{build}.#{service_pack}")
-    end
-
-    def is_windows_server
-      self.product_type != VER_NT_WORKSTATION
-    end
-
-    def is_domain_controller
-      self.product_type == VER_NT_DOMAIN_CONTROLLER
-    end
-
-    def major_release
-      if self.major == 5
-        if self.minor == 1
-          return MajorRelease::XP
-        elsif self.minor == 2
-          return MajorRelease::Server2003 if is_windows_server
-          return MajorRelease::XP
-        end
-      elsif self.major == 6
-        if self.minor == 0
-          return MajorRelease::Server2008 if is_windows_server
-          return MajorRelease::Vista
-        elsif self.minor == 1
-          return MajorRelease::Server2008R2 if is_windows_server
-          return MajorRelease::Server2008R2
-        elsif self.minor == 2
-          return MajorRelease::Server2008R2 if is_windows_server
-          return MajorRelease::Server2008R2
-        elsif self.minor == 3
-          return MajorRelease::Server2008R2 if is_windows_server
-          return MajorRelease::Server2008R2
-        end
-      elsif self.major == 10
-        if self.minor == 0
-          return MajorRelease::Server2016Plus if is_windows_server
-          return MajorRelease::Win10Plus
-        end
-      end
-      return nil
-    end
-
-    def product_name
-      result = "Unknown Windows version: #{self.major}.#{self.minor}.#{self.build}"
-      result = major_release.name unless major_release.nil?
-      result = "#{result} Service Pack #{self.service_pack}" if self.service_pack != 0
-      result = "#{result} Build #{self.build}" if major_release >= MajorRelease::Win10Plus
-
-      result
-    end
-
-    def to_s
-      product_name
-    end
-
     XP_SP0 = Rex::Version.new('5.1.2600.0')
     XP_SP1 = Rex::Version.new('5.1.2600.1')
     XP_SP2 = Rex::Version.new('5.1.2600.2')
@@ -162,7 +41,120 @@ module Msf
     Win11_21H2 = Rex::Version.new('10.0.22000.0')
     Win11_22H2 = Rex::Version.new('10.0.22621.0')
 
-    
-    attr_accessor :major, :minor, :build, :service_pack, :product_type
+    module MajorRelease
+      NT351 = "Windows NT 3.51"
+      Win95 = "Windows 95"
+      Win98 = "Windows 98"
+      WinME = "Windows ME"
+
+      XP = "Windows XP"
+      Server2003 = "Windows Server 2003"
+
+      Vista = "Windows Vista"
+      Server2008 = "Windows Server 2008"
+      
+      Win7 = "Windows 7"
+      Server2008R2 = "Windows 2008 R2"
+
+      Win8 = "Windows 8"
+      Server2012 = "Windows Server 2012"
+
+      Win81 = "Windows 8.1"
+      Server2012R2 = "Windows Server 2012 R2"
+
+      Win10Plus = "Windows 10+"
+      Server2016Plus = "Windows Server 2016+"
+    end
+
+    def initialize(major, minor, build, service_pack, product_type)
+      self._major = major
+      self._minor = minor
+      self._build = build
+      self._service_pack = service_pack
+      self.product_type = product_type
+    end
+
+    # The specific build number of this version (major.minor.build.service_pack)
+    def build_number
+      Rex::Version.new("#{_major}.#{_minor}.#{_build}.#{_service_pack}")
+    end
+
+    # Is this OS a Windows Server instance?
+    def is_windows_server
+      # There are other types than just workstation/server/DC, but Microsoft's own documentation says
+      # "If it's not Workstation, then it's Server"
+      # https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-osversioninfoexa
+      self.product_type != VER_NT_WORKSTATION
+    end
+
+    # This Windows Server has been promoted to a DC
+    def is_domain_controller
+      self.product_type == VER_NT_DOMAIN_CONTROLLER
+    end
+
+    # The name of the OS, as it is most commonly rendered. Includes
+    def product_name
+      result = "Unknown Windows version: #{self._major}.#{self._minor}.#{self._build}"
+      result = major_release_name
+      result = "#{result} Service Pack #{self._service_pack}" if self.service_pack != 0
+      result = "#{result} Build #{self._build}" if build_number >= Win10Plus
+
+      result
+    end
+
+    def to_s
+      product_name
+    end
+
+    # Is this version number from the Vista/Server 2008 generation of Windows OSes
+    def is_vista_or_2008
+      self.build_number.between?(Vista_SP0, Vista_SP2)
+    end
+
+    # Is this version number from the Windows 7/Server 2008 R2 generation of Windows OSes
+    def is_win7_or_2008r2
+      self.build_number.between?(Win7_SP0, Win7_SP1)
+    end
+
+    # Is this version number from the XP/Server 2003 generation of Windows OSes
+    def is_xp_or_2003
+      self.build_number.between?(XP_SP0, Server2003_SP2)
+    end
+
+    attr_accessor :_major, :_minor, :_build, :_service_pack, :product_type
+
+    private
+
+    # The major release within which this build fits
+    def major_release_name
+      if self._major == 5
+        if self._minor == 1
+          return MajorRelease::XP
+        elsif self._minor == 2
+          return MajorRelease::Server2003 if is_windows_server
+          return MajorRelease::XP
+        end
+      elsif self._major == 6
+        if self._minor == 0
+          return MajorRelease::Server2008 if is_windows_server
+          return MajorRelease::Vista
+        elsif self._minor == 1
+          return MajorRelease::Server2008R2 if is_windows_server
+          return MajorRelease::Win7
+        elsif self._minor == 2
+          return MajorRelease::Server2008R2 if is_windows_server
+          return MajorRelease::Win8
+        elsif self._minor == 3
+          return MajorRelease::Server2008R2 if is_windows_server
+          return MajorRelease::Win81
+        end
+      elsif self._major == 10
+        if self._minor == 0
+          return MajorRelease::Server2016Plus if is_windows_server
+          return MajorRelease::Win10Plus
+        end
+      end
+      return nil
+    end
   end
 end
