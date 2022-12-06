@@ -9,6 +9,7 @@ module Msf
     VER_NT_WORKSTATION = 1
     VER_NT_DOMAIN_CONTROLLER = 2
     VER_NT_SERVER = 3
+    UnknownProduct = -1
 
     XP_SP0 = Rex::Version.new('5.1.2600.0')
     XP_SP1 = Rex::Version.new('5.1.2600.1')
@@ -98,8 +99,8 @@ module Msf
       result = "Unknown Windows version: #{_major}.#{_minor}.#{_build}"
       name = major_release_name
       result = major_release_name unless name.nil?
-      result = "#{result} Service Pack #{_service_pack}" if service_pack != 0
-      result = "#{result} Build #{_build}" if build_number >= Win10Plus
+      result = "#{result} Service Pack #{_service_pack}" if _service_pack != 0
+      result = "#{result} Build #{_build}" if build_number >= Win10_InitialRelease
 
       result
     end
@@ -147,11 +148,11 @@ module Msf
 
           return MajorRelease::Win7
         elsif _minor == 2
-          return MajorRelease::Server2008R2 if windows_server?
+          return MajorRelease::Server2012 if windows_server?
 
           return MajorRelease::Win8
         elsif _minor == 3
-          return MajorRelease::Server2008R2 if windows_server?
+          return MajorRelease::Server2012R2 if windows_server?
 
           return MajorRelease::Win81
         end
