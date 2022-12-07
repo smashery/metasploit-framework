@@ -38,7 +38,7 @@ module Msf
     Win10_20H2 = Rex::Version.new('10.0.19042.0')
     Win10_21H1 = Rex::Version.new('10.0.19043.0')
     Win10_21H2 = Rex::Version.new('10.0.19044.0')
-    Win10_22H2 = Rex::Version.new('10.0.19044.0')
+    Win10_22H2 = Rex::Version.new('10.0.19045.0')
     Server2022 = Rex::Version.new('10.0.20348.0')
     Win11_21H2 = Rex::Version.new('10.0.22000.0')
     Win11_22H2 = Rex::Version.new('10.0.22621.0')
