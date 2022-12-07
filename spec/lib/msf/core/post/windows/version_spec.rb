@@ -102,6 +102,50 @@ Network Card(s):           1 NIC(s) Installed.
                                  [01]: 192.168.73.148'
   end
 
+  let(:server2008_sp2_systeminfo) do
+    'Host Name:                 WIN2008DC
+OS Name:                   Microsoftr Windows Serverr 2008 Standard
+OS Version:                6.0.6002 Service Pack 2 Build 6002
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Primary Domain Controller
+OS Build Type:             Multiprocessor Free
+Registered Owner:          Windows User
+Registered Organization:
+Product ID:                92573-082-2500115-76258
+Original Install Date:     7/7/2022, 9:49:59 AM
+System Boot Time:          11/29/2022, 9:44:06 AM
+System Manufacturer:       QEMU
+System Model:              Standard PC (i440FX + PIIX, 1996)
+System Type:               x64-based PC
+Processor(s):              1 Processor(s) Installed.
+                           [01]: Intel64 Family 15 Model 6 Stepping 1 GenuineIntel ~3392 Mhz
+BIOS Version:              SeaBIOS rel-1.14.0-0-g155821a1990b-prebuilt.qemu.org, 4/1/2014
+Windows Directory:         C:\Windows
+System Directory:          C:\Windows\system32
+Boot Device:               \Device\HarddiskVolume1
+System Locale:             en-us;English (United States)
+Input Locale:              en-us;English (United States)
+Time Zone:                 (GMT+10:00) Canberra, Melbourne, Sydney
+Total Physical Memory:     4,095 MB
+Available Physical Memory: 2,833 MB
+Page File: Max Size:       8,363 MB
+Page File: Available:      7,083 MB
+Page File: In Use:         1,280 MB
+Page File Location(s):     C:\pagefile.sys
+Domain:                    pod7.local
+Logon Server:              \\WIN2008DC
+Hotfix(s):                 1 Hotfix(s) Installed.
+                           [01]: KB955430
+Network Card(s):           1 NIC(s) Installed.
+                           [01]: Intel(R) PRO/1000 MT Network Connection
+                                 Connection Name: Local Area Connection
+                                 DHCP Enabled:    Yes
+                                 DHCP Server:     192.168.20.1
+                                 IP address(es)
+                                 [01]: 192.168.20.99
+                                 [02]: fe80::4d31:5b50:425a:4df0'
+  end
+
   let(:win10_systeminfo) do
     'Host Name:                 WIN10BASE                 
 OS Name:                   Microsoft Windows 10 Pro                                                               
@@ -310,6 +354,7 @@ Network Card(s):           1 NIC(s) Installed.
       version = subject.get_version_info
       expect(version.build_number).to eq(Msf::WindowsVersion::XP_SP2)
       expect(version.windows_server?).to eq(false)
+      expect(version.domain_controller?).to eq(false)
     end
 
     it "parses systeminfo on 2003" do
@@ -318,6 +363,7 @@ Network Card(s):           1 NIC(s) Installed.
       version = subject.get_version_info
       expect(version.build_number).to eq(Msf::WindowsVersion::Server2003_SP1)
       expect(version.windows_server?).to eq(true)
+      expect(version.domain_controller?).to eq(false)
     end
 
     it "parses systeminfo on Win10" do
@@ -326,6 +372,7 @@ Network Card(s):           1 NIC(s) Installed.
       version = subject.get_version_info
       expect(version.build_number).to eq(Msf::WindowsVersion::Win10_22H2)
       expect(version.windows_server?).to eq(false)
+      expect(version.domain_controller?).to eq(false)
     end
 
     it "parses systeminfo on 2022" do
@@ -334,6 +381,7 @@ Network Card(s):           1 NIC(s) Installed.
       version = subject.get_version_info
       expect(version.build_number).to eq(Msf::WindowsVersion::Server2022)
       expect(version.windows_server?).to eq(true)
+      expect(version.domain_controller?).to eq(false)
     end
 
     it "parses systeminfo on 2012" do
@@ -342,6 +390,7 @@ Network Card(s):           1 NIC(s) Installed.
       version = subject.get_version_info
       expect(version.build_number).to eq(Msf::WindowsVersion::Server2012)
       expect(version.windows_server?).to eq(true)
+      expect(version.domain_controller?).to eq(true)
     end
 
     it "parses systeminfo on 2008R2" do
@@ -350,6 +399,16 @@ Network Card(s):           1 NIC(s) Installed.
       version = subject.get_version_info
       expect(version.build_number).to eq(Msf::WindowsVersion::Server2008_R2_SP1)
       expect(version.windows_server?).to eq(true)
+      expect(version.domain_controller?).to eq(false)
+    end
+
+    it "parses systeminfo on 2008" do
+      allow(subject).to receive(:cmd_exec) { server2008_sp2_systeminfo }
+      allow(subject).to receive_message_chain('session.type').and_return('shell')
+      version = subject.get_version_info
+      expect(version.build_number).to eq(Msf::WindowsVersion::Server2008_SP2)
+      expect(version.windows_server?).to eq(true)
+      expect(version.domain_controller?).to eq(true)
     end
 
   end
