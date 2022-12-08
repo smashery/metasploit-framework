@@ -90,6 +90,7 @@ module Msf
       product_type != VER_NT_WORKSTATION
     end
 
+    # Is this a Workstation build?
     def workstation?
       product_type == VER_NT_WORKSTATION
     end
@@ -99,11 +100,11 @@ module Msf
       product_type == VER_NT_DOMAIN_CONTROLLER
     end
 
-    # The name of the OS, as it is most commonly rendered. Includes
+    # The name of the OS, as it is most commonly rendered. Includes Service Pack if present, or build number if Win10 or higher.
     def product_name
       result = "Unknown Windows version: #{_major}.#{_minor}.#{_build}"
       name = major_release_name
-      result = major_release_name unless name.nil?
+      result = name unless name.nil?
       result = "#{result} Service Pack #{_service_pack}" if _service_pack != 0
       result = "#{result} Build #{_build}" if build_number >= Win10_InitialRelease
 
@@ -129,9 +130,9 @@ module Msf
       build_number.between?(XP_SP0, Server2003_SP2)
     end
 
-    attr_accessor :_major, :_minor, :_build, :_service_pack, :product_type
-
     private
+
+    attr_accessor :_major, :_minor, :_build, :_service_pack, :product_type
 
     # The major release within which this build fits
     def major_release_name

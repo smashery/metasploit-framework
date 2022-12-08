@@ -33,6 +33,7 @@ module Msf::Post::Windows::Version
       bn_groups = build_num_raw.match(/OS Version:\s+(\d+)\.(\d+)\.(\d+).*((Service Pack\s+(\d+))|N\/A)/)
       if bn_groups.nil?
         print_error("Couldn't retrieve the target's build number!")
+        raise RuntimeError.new("Couldn't retrieve the target's build number!")
       else
         sp = bn_groups[6]
         sp = 0 if sp.nil?

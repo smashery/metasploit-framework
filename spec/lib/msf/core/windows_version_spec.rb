@@ -21,4 +21,9 @@ RSpec.describe Msf::WindowsVersion do
     subject = described_class.new(5,1,2600,2,Msf::WindowsVersion::VER_NT_WORKSTATION)
     expect(subject.to_s).to eq('Windows XP Service Pack 2')
   end
+
+  it 'Outputs unknown version' do
+    subject = described_class.new(1,2,3000,0,Msf::WindowsVersion::VER_NT_WORKSTATION)
+    expect(subject.to_s).to eq('Unknown Windows version: 1.2.3000')
+  end
 end
