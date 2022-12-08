@@ -4,6 +4,7 @@ class Post
 module Windows
 
 module Eventlog
+  include Msf::Post::Windows::Version
 
   def initialize(info = {})
     super(
@@ -12,7 +13,6 @@ module Eventlog
         'Compat' => {
           'Meterpreter' => {
             'Commands' => %w[
-              stdapi_sys_config_sysinfo
               stdapi_sys_eventlog_*
             ]
           }
@@ -26,7 +26,8 @@ module Eventlog
   #
   def eventlog_list
     key = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\"
-    if session.sys.config.sysinfo['OS'] =~ /Windows 2003|\.Net|XP|2000/
+    version = get_version_info
+    if version.build_number.between?(Msf::WindowsVersion::Win2000, Msf::WindowsVersion::Server2003_SP2)
       key = "#{key}Eventlog"
     else
       key = "#{key}eventlog"

@@ -40,7 +40,8 @@ class MetasploitModule < Msf::Post
 
 
   def run
-    disable_network_wizard if sysinfo["OS"] =~ /Windows 7|Vista|2008/
+    version = get_version_info
+    disable_network_wizard if version.build_number.between?(Msf::WindowsVersion::Vista_SP0, Msf::WindowsVersion::Win7_SP1)
 
     pbk = create_pbk(datastore['MITM'],datastore['PBK_NAME'])
     to = (datastore['TIMEOUT'] <= 0 ) ? 60 : datastore['TIMEOUT']

@@ -6,6 +6,7 @@
 
 class MetasploitModule < Msf::Post
   include Msf::Post::Windows::Registry
+  include Msf::Post::Windows::Version
 
   WDIGEST_REG_LOCATION = 'HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest'
   USE_LOGON_CREDENTIAL = 'UseLogonCredential'
@@ -35,7 +36,8 @@ class MetasploitModule < Msf::Post
     print_status("Running module against #{sysinfo['Computer']}")
     # Check if OS is 8/2012 or newer. If not, no need to set the registry key
     # Can be backported to Windows 7, 2k8R2 but defaults to enabled...
-    if sysinfo['OS'] =~ /Windows (XP|Vista|200[03])/i
+    version = get_version_info
+    if version.build_number < Msf::WindowsVersion::Win7_SP0
       print_status('Older Windows version detected. No need to enable the WDigest Security Provider. Exiting...')
     else
       datastore['ENABLE'] ? wdigest_enable : wdigest_disable
