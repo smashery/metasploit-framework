@@ -90,6 +90,10 @@ module Msf
       product_type != VER_NT_WORKSTATION
     end
 
+    def workstation?
+      product_type == VER_NT_WORKSTATION
+    end
+
     # This Windows Server has been promoted to a DC
     def domain_controller?
       product_type == VER_NT_DOMAIN_CONTROLLER
