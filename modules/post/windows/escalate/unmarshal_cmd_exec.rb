@@ -5,6 +5,7 @@
 class MetasploitModule < Msf::Post
   include Msf::Post::Common
   include Msf::Post::File
+  include Msf::Post::Windows::Version
   #  include Msf::Post::Windows::Priv
 
   def initialize(info = {})
@@ -97,8 +98,9 @@ class MetasploitModule < Msf::Post
     if sysinfo['Architecture'] == ARCH_X86
       fail_with(Failure::NoTarget, 'Exploit code is 64-bit only')
     end
-    if sysinfo['OS'] =~ /XP/
-      fail_with(Failure::Unknown, 'The exploit binary does not support Windows XP')
+    version = get_version_info
+    unless version.build_number.between?(Msf::WindowsVersion::Vista_SP0, Msf::WindowsVersion::Win10_1803)
+      fail_with(Failure::Unknown, 'The exploit does not support this OS')
     end
   end
 
