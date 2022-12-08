@@ -46,9 +46,8 @@ class MetasploitModule < Msf::Post
   end
 
   def run
-    winver = sysinfo["OS"]
-
-    if winver =~ /2000/i
+    version = get_version_info
+    if version.build_number == Msf::WindowsVersion::Win2000
       print_error("Module not valid for Windows 2000")
       return
     end
@@ -66,7 +65,7 @@ class MetasploitModule < Msf::Post
       return
     end
 
-    print_status("System Info - OS: #{winver}, Drive: #{drive}")
+    print_status("System Info - OS: #{version.product_name}, Drive: #{drive}")
     type = datastore['FILES']
     files = type.split(',')
     # To extract files from its IDs

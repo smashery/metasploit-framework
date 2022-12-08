@@ -76,7 +76,8 @@ class MetasploitModule < Msf::Post
         # Uses DC which applied policy since it would be a DC this device normally talks to
         cmd = "gpresult /SCOPE COMPUTER"
         # If Vista/2008 or later add /R
-        if (sysinfo['OS'] =~ /Build [6-9]\d\d\d/)
+        version = get_version_info
+        if version.build_number >= Msf::WindowsVersion::Vista_SP0
           cmd << " /R"
         end
         res = cmd_exec("cmd.exe", "/c #{cmd}")

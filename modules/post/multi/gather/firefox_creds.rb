@@ -64,7 +64,6 @@ class MetasploitModule < Msf::Post
               stdapi_fs_stat
               stdapi_sys_config_getenv
               stdapi_sys_config_getuid
-              stdapi_sys_config_sysinfo
               stdapi_sys_process_get_processes
               stdapi_sys_process_kill
             ]
@@ -380,7 +379,8 @@ class MetasploitModule < Msf::Post
 
     case @platform
     when :windows
-      unless got_root || session.sys.config.sysinfo['OS'] =~ /xp/i
+      version = get_version_info
+      unless got_root || version.xp_or_2003?
         print_warning("You may need SYSTEM privileges on this platform for the DECRYPT option to work")
       end
 

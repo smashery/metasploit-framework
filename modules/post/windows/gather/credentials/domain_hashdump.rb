@@ -89,18 +89,18 @@ class MetasploitModule < Msf::Post
   end
 
   def copy_database_file
-    database_file_path = nil
-    case sysinfo["OS"]
-    when /2003| \.NET/
-      print_status "Using Volume Shadow Copy Method"
-      database_file_path = vss_method
-    when /2008|2012|2016/
-      print_status "Using NTDSUTIL method"
-      database_file_path = ntdsutil_method
-    else
-      print_error "This version of Windows is unsupported"
+    version = get_version_info
+    if version.windows_server?
+      if version.build_number.between?(Msf::WindowsVersion::Server2003_SP0, Msf::WindowsVersion::Server2003_SP2)
+        print_status "Using Volume Shadow Copy Method"
+        return vss_method
+      elsif version.build_number >= Msf::WindowsVersion::Server2008_SP0
+        print_status "Using NTDSUTIL method"
+        return ntdsutil_method
+      end
     end
-    database_file_path
+    print_error "This version of Windows is unsupported"
+    return nil
   end
 
   def ntds_exists?
