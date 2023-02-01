@@ -30,7 +30,13 @@ module Msf::Post::Windows::Version
       Msf::WindowsVersion.new(major, minor, build, service_pack, product_type)
     else
       build_num_raw = cmd_exec('systeminfo')
-      bn_groups = build_num_raw.match(/OS Version:\s+(\d+)\.(\d+)\.(\d+).*((Service Pack\s+(\d+))|N\/A)/)
+      if build_num_raw.include?('not recognized') # Windows 2K and earlier do not have systeminfo
+        build_num_raw = cmd_exec('ver') # This works on 98 and up, but no SP data.
+        bn_groups = build_num_raw.match(/.*Version\s+(\d+)\.(\d+)\.(\d+)/)
+      else
+        bn_groups = build_num_raw.match(/OS Version:\s+(\d+)\.(\d+)\.(\d+).*((Service Pack\s+(\d+))|N\/A)/)
+      end
+
       if bn_groups.nil?
         print_error("Couldn't retrieve the target's build number!")
         raise RuntimeError.new("Couldn't retrieve the target's build number!")

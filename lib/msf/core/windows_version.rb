@@ -51,6 +51,7 @@ module Msf
       WinME = 'Windows ME'.freeze
 
       XP = 'Windows XP'.freeze
+      Win2000 = 'Windows 2000'.freeze
       Server2003 = 'Windows Server 2003'.freeze
 
       Vista = 'Windows Vista'.freeze
@@ -137,8 +138,10 @@ module Msf
     # The major release within which this build fits
     def major_release_name
       if _major == 5
-        if _minor == 1
-          return MajorRelease::XP
+        if _minor == 0
+          return MajorRelease::Win2000
+        elsif _minor == 1
+            return MajorRelease::XP
         elsif _minor == 2
           return MajorRelease::Server2003 if windows_server?
 
