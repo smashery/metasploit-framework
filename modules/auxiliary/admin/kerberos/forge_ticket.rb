@@ -84,12 +84,13 @@ class MetasploitModule < Msf::Auxiliary
     start_time = Time.now.utc
     end_time = start_time + SECS_IN_DAY * datastore['DURATION']
 
+    sname_principal = create_principal(sname)
     ccache = forge_ticket(
       enc_key: enc_key,
       enc_type: enc_type,
       start_time: start_time,
       end_time: end_time,
-      sname: sname,
+      sname_principal: sname_principal,
       flags: flags,
       domain: datastore['DOMAIN'],
       username: datastore['USER'],
